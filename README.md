@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Osiria
 
-## Getting Started
+Osiria is a Social-to-Earn web application. Brands fund campaigns. People complete social tasks. Later phases will add accounts, verification, and settlement.
 
-First, run the development server:
+## Stack
 
-```bash
+- Next.js 16 (App Router, TypeScript, `src/` directory)
+- Tailwind CSS 4
+- ESLint
+- PostgreSQL with Prisma ORM 7.10.1 (`@prisma/client` + `@prisma/adapter-pg`)
+
+## Run locally
+
+```powershell
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm run lint
+npm run typecheck
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Phase 1 — public UI
 
-## Learn More
+Public routes:
 
-To learn more about Next.js, take a look at the following resources:
+- `/` Home
+- `/campaigns` Sample campaign gallery
+- `/how-it-works` Product model
+- `/login` Placeholder (no authentication)
+- `/register` Placeholder (no account creation)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Campaign cards still use isolated sample records in `src/data/sample-campaigns.ts`. That file is preview data only.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Phase 2 — database schema
 
-## Deploy on Vercel
+Prisma models live in `prisma/schema.prisma`. Monetary fields (`budgetMinor`, `rewardAmountMinor`, `amountMinor`) are **integer minor units** (for example cents), never floating-point values.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Connection configuration:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Copy `.env.example` to `.env`
+- Set `DATABASE_URL` to your PostgreSQL URL
+- Do not commit `.env`
+
+The app does **not** treat the database as connected until `DATABASE_URL` is set locally and a health check succeeds.
+
+Health check (does not print credentials):
+
+- HTTP: `GET /api/health/database`
+- CLI: `npm run db:health`
+
+There is no seeded or default admin account.
+
+### Apply migrations (after you have a real DATABASE_URL)
+
+```powershell
+Copy-Item .env.example .env
+# Edit .env and replace USER/PASSWORD/host with your values
+npx prisma migrate deploy
+npm run db:health
+```
+
+For local development iteration you can use `npx prisma migrate dev` instead of `migrate deploy`.
+
+## Out of scope so far
+
+- Authentication
+- Payments and wallets
+- Social verification
+- Deployment
+- Secrets in the repository
+
+See `PROGRESS.md` for phase status.

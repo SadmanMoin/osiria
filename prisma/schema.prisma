@@ -1,0 +1,329 @@
+// Osiria Phase 2 data model.
+// Monetary amounts are integer minor units (for example cents), never floats.
+// DATABASE_URL is supplied via prisma.config.ts / process environment, not this file.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  PARTICIPANT
+  BRAND
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum SocialPlatform {
+  X
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  FACEBOOK
+  THREADS
+  LINKEDIN
+}
+
+enum SocialAccountStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+}
+
+enum CampaignStatus {
+  DRAFT
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum CampaignTaskStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum PointsReason {
+  TASK_REWARD
+  ADJUSTMENT
+  CLAWBACK
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum BudgetReason {
+  FUND
+  RESERVE
+  RELEASE
+  PAYOUT
+  ADJUSTMENT
+}
+
+enum NotificationType {
+  SYSTEM
+  CAMPAIGN
+  SUBMISSION
+  PAYMENT
+}
+
+enum FraudType {
+  DUPLICATE_SUBMISSION
+  VELOCITY
+  ACCOUNT_MISMATCH
+  MANUAL_REVIEW
+}
+
+enum FraudSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String?
+  displayName     String
+  role            UserRole   @default(PARTICIPANT)
+  status          UserStatus @default(ACTIVE)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  socialAccounts      SocialAccount[]
+  ownedCampaigns      Campaign[]          @relation("CampaignOwner")
+  submissions         TaskSubmission[]    @relation("SubmissionAuthor")
+  reviewedSubmissions TaskSubmission[]    @relation("SubmissionReviewer")
+  pointsEntries       PointsLedger[]
+  payments            Payment[]
+  notifications       Notification[]
+  fraudEvents         FraudEvent[]
+  adminAuditLogs      AdminAuditLog[]     @relation("AuditActor")
+
+  @@index([role, status])
+  @@index([createdAt])
+}
+
+model SocialAccount {
+  id                String              @id @default(uuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform          SocialPlatform
+  handle            String
+  externalAccountId String?
+  status            SocialAccountStatus @default(PENDING)
+  verifiedAt        DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  submissions TaskSubmission[]
+
+  @@unique([userId, platform])
+  @@unique([platform, handle])
+  @@index([userId])
+  @@index([status])
+}
+
+model SocialPlatformSetting {
+  id                   String         @id @default(uuid())
+  platform             SocialPlatform @unique
+  displayName          String
+  isEnabled            Boolean        @default(true)
+  verificationRequired Boolean        @default(true)
+  minFollowers         Int?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+}
+
+model Campaign {
+  id          String         @id @default(uuid())
+  ownerId     String
+  owner       User           @relation("CampaignOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  slug        String         @unique
+  title       String
+  description String
+  status      CampaignStatus @default(DRAFT)
+  /// Total campaign budget in integer minor units (e.g. cents).
+  budgetMinor Int
+  currency    String         @default("USD") @db.Char(3)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  tasks         CampaignTask[]
+  budgetEntries CampaignBudgetLedger[]
+  pointsEntries PointsLedger[]
+
+  @@index([ownerId])
+  @@index([status, startsAt])
+}
+
+model CampaignTask {
+  id          String             @id @default(uuid())
+  campaignId  String
+  campaign    Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  platform    SocialPlatform
+  title       String
+  instructions String
+  rewardPoints Int
+  /// Per-completion payout in integer minor units (e.g. cents).
+  rewardAmountMinor Int
+  slotsTotal  Int
+  slotsFilled Int                @default(0)
+  status      CampaignTaskStatus @default(DRAFT)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  submissions TaskSubmission[]
+
+  @@index([campaignId, platform])
+  @@index([status])
+}
+
+model TaskSubmission {
+  id              String           @id @default(uuid())
+  taskId          String
+  task            CampaignTask     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User             @relation("SubmissionAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  socialAccountId String
+  socialAccount   SocialAccount    @relation(fields: [socialAccountId], references: [id], onDelete: Restrict)
+  status          SubmissionStatus @default(PENDING)
+  proofUrl        String?
+  reviewerNote    String?
+  reviewedById    String?
+  reviewedBy      User?            @relation("SubmissionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  submittedAt     DateTime         @default(now())
+  reviewedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  pointsEntry   PointsLedger?
+  fraudEvents   FraudEvent[]
+  budgetEntries CampaignBudgetLedger[]
+
+  @@unique([taskId, userId])
+  @@index([userId, status])
+  @@index([status, submittedAt])
+}
+
+model PointsLedger {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deltaPoints  Int
+  reason       PointsReason
+  campaignId   String?
+  campaign     Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  submissionId String?      @unique
+  submission   TaskSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  note         String?
+  createdAt    DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([reason, createdAt])
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  /// Gross amount in integer minor units (e.g. cents). Always positive.
+  amountMinor       Int
+  currency          String        @default("USD") @db.Char(3)
+  status            PaymentStatus @default(PENDING)
+  externalReference String?       @unique
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  budgetEntries CampaignBudgetLedger[]
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model CampaignBudgetLedger {
+  id           String       @id @default(uuid())
+  campaignId   String
+  campaign     Campaign     @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  /// Signed amount in integer minor units. Credits are positive, debits negative.
+  amountMinor  Int
+  reason       BudgetReason
+  paymentId    String?
+  payment      Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  submissionId String?
+  submission   TaskSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  note         String?
+  createdAt    DateTime     @default(now())
+
+  @@index([campaignId, createdAt])
+  @@index([reason, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+model FraudEvent {
+  id           String        @id @default(uuid())
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  submissionId String?
+  submission   TaskSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  type         FraudType
+  severity     FraudSeverity
+  details      Json?
+  createdAt    DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([severity, createdAt])
+  @@index([type, createdAt])
+}
+
+model AdminAuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String
+  actor        User     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  action       String
+  entityType   String
+  entityId     String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+}

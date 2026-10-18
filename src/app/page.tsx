@@ -1,69 +1,154 @@
-import Image from "next/image";
+import { CampaignCard } from "@/components/campaigns/CampaignCard";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Container } from "@/components/ui/Container";
+import { SampleDataNotice } from "@/components/ui/SampleDataNotice";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { sampleCampaigns } from "@/data/sample-campaigns";
+
+const steps = [
+  {
+    title: "Browse campaigns",
+    body: "See brand briefs, platforms, and reward labels in one place. Live matching comes later.",
+  },
+  {
+    title: "Complete social work",
+    body: "Posts, replies, videos, and community tasks stay attached to a campaign, not a one-off shoutout.",
+  },
+  {
+    title: "Verify and earn later",
+    body: "Social verification, wallets, and payouts are out of scope for Phase 1. This preview stops at the public product surface.",
+  },
+];
+
+const audiences = [
+  {
+    title: "For participants",
+    body: "Turn the accounts you already run into structured campaign work with clear briefs instead of informal DMs.",
+  },
+  {
+    title: "For brands",
+    body: "Fund a campaign, set the task, and review a roster of people who can actually complete the work.",
+  },
+  {
+    title: "For operators",
+    body: "Osiria is being built as Social-to-Earn infrastructure: campaigns, verification, and settlement in later phases.",
+  },
+];
 
 export default function Home() {
+  const featured = sampleCampaigns.slice(0, 3);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      <section className="relative overflow-hidden border-b border-border">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(215,176,86,0.16),transparent_36%),radial-gradient(circle_at_20%_80%,rgba(126,224,200,0.1),transparent_32%)]"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+        <Container className="relative grid gap-12 py-20 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-28">
+          <div>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+              Social-to-Earn
+            </p>
+            <h1 className="font-display text-4xl leading-tight tracking-tight sm:text-6xl">
+              Campaigns that pay people for real social work.
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-muted">
+              Osiria is a marketplace layer for brands that need posts, threads,
+              and community amplification — and for people who want to earn from
+              the audiences they already built.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button href="/campaigns">View sample campaigns</Button>
+              <Button href="/how-it-works" variant="secondary">
+                How it works
+              </Button>
+            </div>
+          </div>
+          <Card className="relative overflow-hidden bg-surface-elevated">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted">
+              Product preview
+            </p>
+            <p className="mt-4 font-display text-3xl tracking-tight">
+              No live wallets. No fake logins. No staged payouts.
+            </p>
+            <p className="mt-4 text-sm leading-6 text-muted">
+              Phase 1 ships the public site, navigation, and a campaign gallery
+              backed by local sample records so the product can be reviewed
+              before any backend work begins.
+            </p>
+            <dl className="mt-8 grid grid-cols-2 gap-6 text-sm">
+              <div>
+                <dt className="text-muted">Sample campaigns</dt>
+                <dd className="mt-1 font-display text-2xl">{sampleCampaigns.length}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Public routes</dt>
+                <dd className="mt-1 font-display text-2xl">5</dd>
+              </div>
+            </dl>
+          </Card>
+        </Container>
+      </section>
+
+      <section className="py-20">
+        <Container>
+          <SectionHeading
+            eyebrow="Who it is for"
+            title="A professional surface for Social-to-Earn."
+            description="The landing experience is designed for brands, creators, and operators evaluating the product — not as a novelty crypto splash page."
+          />
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {audiences.map((item) => (
+              <Card key={item.title}>
+                <h3 className="font-display text-xl">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-muted">{item.body}</p>
+              </Card>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="border-y border-border bg-surface py-20">
+        <Container>
+          <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <SectionHeading
+              eyebrow="Campaigns"
+              title="A preview of the marketplace."
+              description="Cards below use isolated sample data so layout, density, and copy can be judged without a database."
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <Button href="/campaigns" variant="secondary">
+              Browse all samples
+            </Button>
+          </div>
+          <SampleDataNotice />
+          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+            {featured.map((campaign) => (
+              <CampaignCard key={campaign.id} campaign={campaign} />
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      <section className="py-20">
+        <Container>
+          <SectionHeading
+            eyebrow="Flow"
+            title="Simple now. Strict later."
+            description="Phase 1 explains the loop without pretending verification or payments already exist."
+          />
+          <ol className="mt-10 grid gap-5 md:grid-cols-3">
+            {steps.map((step, index) => (
+              <Card key={step.title}>
+                <p className="font-mono text-sm text-accent">0{index + 1}</p>
+                <h3 className="mt-3 font-display text-xl">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-muted">{step.body}</p>
+              </Card>
+            ))}
+          </ol>
+        </Container>
+      </section>
+    </>
   );
 }
