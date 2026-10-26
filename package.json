@@ -12,7 +12,10 @@
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:health": "tsx src/lib/db/health-check.ts"
+    "db:health": "tsx src/lib/db/health-check.ts",
+    "test": "vitest run",
+    "auth:create-admin": "tsx src/lib/auth/create-admin.ts",
+    "security:backfill-proofs": "tsx src/lib/security/backfill-proofs.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
@@ -21,7 +24,8 @@
     "next": "16.4.2",
     "pg": "^8.23.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
@@ -34,6 +38,8 @@
     "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.12"
   }
 }

@@ -9,7 +9,7 @@ export default function NotFound() {
       </p>
       <h1 className="mt-4 font-display text-4xl tracking-tight">Page not found</h1>
       <p className="mx-auto mt-4 max-w-md text-muted">
-        That route is not part of the Phase 1 public site.
+        That page does not exist.
       </p>
       <div className="mt-8 flex justify-center">
         <Button href="/">Back home</Button>

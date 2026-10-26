@@ -1,67 +1,63 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Container } from "@/components/ui/Container";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { RegisterForm } from "@/components/auth/AuthForms";
+import { homeForRole } from "@/lib/auth/authorization";
+import { getOptionalUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Register",
-  description:
-    "Registration is a placeholder in Phase 1. No accounts are created.",
+  description: "Create an Osiria worker or advertiser account. Admin accounts are not public.",
 };
 
-export default function RegisterPage() {
+export default function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
   return (
-    <Container className="flex justify-center py-16 sm:py-24">
-      <Card className="w-full max-w-md">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
-          Placeholder
-        </p>
-        <h1 className="mt-3 font-display text-3xl tracking-tight">Create account</h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          Registration is reserved for a later phase. These fields are disabled
-          so the UI can be reviewed without creating fake users or collecting
-          credentials.
-        </p>
-        <form className="mt-8 space-y-4">
-          <label className="block text-sm">
-            Name
-            <input
-              disabled
-              type="text"
-              placeholder="Your name"
-              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted"
-            />
-          </label>
-          <label className="block text-sm">
-            Email
-            <input
-              disabled
-              type="email"
-              placeholder="you@example.com"
-              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted"
-            />
-          </label>
-          <label className="block text-sm">
-            Password
-            <input
-              disabled
-              type="password"
-              placeholder="Create a password later"
-              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted"
-            />
-          </label>
-          <Button disabled className="w-full">
-            Registration unavailable
-          </Button>
-        </form>
-        <p className="mt-6 text-sm text-muted">
-          Already planning to return?{" "}
-          <Link href="/login" className="text-accent hover:underline">
-            Login placeholder
-          </Link>
-        </p>
-      </Card>
-    </Container>
+    <Suspense
+      fallback={
+        <AuthShell
+          eyebrow="Account"
+          title="Create account"
+          description="Checking your session…"
+        >
+          {null}
+        </AuthShell>
+      }
+    >
+      <RegisterContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function RegisterContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  const next = Array.isArray(query.next) ? query.next[0] ?? "" : query.next ?? "";
+  const user = await getOptionalUser();
+  if (user) {
+    redirect(homeForRole(user.role));
+  }
+
+  return (
+    <AuthShell
+      eyebrow="Account"
+      title="Create account"
+      description="Workers complete social tasks. Advertisers fund campaigns. This form cannot create an admin."
+      footer={
+        <Link href="/login" className="text-accent hover:underline">
+          Already have an account? Log in
+        </Link>
+      }
+    >
+      <RegisterForm next={next} />
+    </AuthShell>
   );
 }

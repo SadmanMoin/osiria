@@ -20,12 +20,18 @@ export function Button({
   variant = "primary",
   className = "",
   disabled,
+  type = "button",
+  name,
+  value,
 }: {
   href?: string;
   children: ReactNode;
   variant?: Variant;
   className?: string;
   disabled?: boolean;
+  type?: "button" | "submit";
+  name?: string;
+  value?: string;
 }) {
   const classes = `${base} ${variants[variant]} ${className}`;
 
@@ -38,7 +44,7 @@ export function Button({
   }
 
   return (
-    <button type="button" className={classes} disabled={disabled}>
+    <button type={type} name={name} value={value} className={classes} disabled={disabled}>
       {children}
     </button>
   );

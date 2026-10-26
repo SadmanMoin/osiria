@@ -23,11 +23,11 @@ const steps = [
 
 const audiences = [
   {
-    title: "For participants",
+    title: "For workers",
     body: "Turn the accounts you already run into structured campaign work with clear briefs instead of informal DMs.",
   },
   {
-    title: "For brands",
+    title: "For advertisers",
     body: "Fund a campaign, set the task, and review a roster of people who can actually complete the work.",
   },
   {
@@ -71,12 +71,11 @@ export default function Home() {
               Product preview
             </p>
             <p className="mt-4 font-display text-3xl tracking-tight">
-              No live wallets. No fake logins. No staged payouts.
+              No live wallets. Signed-in roles. No staged payouts.
             </p>
             <p className="mt-4 text-sm leading-6 text-muted">
-              Phase 1 ships the public site, navigation, and a campaign gallery
-              backed by local sample records so the product can be reviewed
-              before any backend work begins.
+              Accounts, sessions, and role checks are live. Campaign cards still
+              use local sample records. Wallets and payouts are not.
             </p>
             <dl className="mt-8 grid grid-cols-2 gap-6 text-sm">
               <div>
@@ -84,8 +83,8 @@ export default function Home() {
                 <dd className="mt-1 font-display text-2xl">{sampleCampaigns.length}</dd>
               </div>
               <div>
-                <dt className="text-muted">Public routes</dt>
-                <dd className="mt-1 font-display text-2xl">5</dd>
+                <dt className="text-muted">Account roles</dt>
+                <dd className="mt-1 font-display text-2xl">3</dd>
               </div>
             </dl>
           </Card>

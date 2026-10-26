@@ -6,11 +6,20 @@ import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { logoutAction } from "@/lib/auth/actions";
+import { homeForRole, roleLabel } from "@/lib/auth/authorization";
+import type { UserRole } from "@/lib/auth/constants";
 import { navLinks } from "@/lib/site";
 
-export function Header() {
+export type HeaderUser = {
+  displayName: string;
+  role: UserRole;
+};
+
+export function Header({ user }: { user: HeaderUser | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const home = user ? homeForRole(user.role) : "/login";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
@@ -22,9 +31,7 @@ export function Header() {
         <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
           {navLinks.map((link) => {
             const active =
-              link.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(link.href);
+              link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
             return (
               <Link
                 key={link.href}
@@ -40,10 +47,11 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button href="/login" variant="ghost">
-            Log in
-          </Button>
-          <Button href="/register">Create account</Button>
+          {user ? (
+            <SignedInLinks user={user} home={home} />
+          ) : (
+            <SignedOutLinks />
+          )}
         </div>
 
         <button
@@ -66,10 +74,7 @@ export function Header() {
       </Container>
 
       {open ? (
-        <div
-          id="mobile-nav"
-          className="border-t border-border bg-background md:hidden"
-        >
+        <div id="mobile-nav" className="border-t border-border bg-background md:hidden">
           <Container className="flex flex-col gap-4 py-5">
             {navLinks.map((link) => (
               <Link
@@ -82,14 +87,56 @@ export function Header() {
               </Link>
             ))}
             <div className="flex flex-col gap-2 pt-2">
-              <Button href="/login" variant="secondary">
-                Log in
-              </Button>
-              <Button href="/register">Create account</Button>
+              {user ? (
+                <SignedInLinks user={user} home={home} stacked />
+              ) : (
+                <SignedOutLinks stacked />
+              )}
             </div>
           </Container>
         </div>
       ) : null}
     </header>
+  );
+}
+
+function SignedOutLinks({ stacked = false }: { stacked?: boolean }) {
+  return (
+    <>
+      <Button href="/login" variant={stacked ? "secondary" : "ghost"}>
+        Log in
+      </Button>
+      <Button href="/register">Create account</Button>
+    </>
+  );
+}
+
+function SignedInLinks({
+  user,
+  home,
+  stacked = false,
+}: {
+  user: HeaderUser;
+  home: string;
+  stacked?: boolean;
+}) {
+  return (
+    <>
+      <span className={`truncate text-sm text-muted ${stacked ? "max-w-full" : "max-w-40"}`}>
+        {user.displayName}
+        <span className="text-foreground"> · {roleLabel(user.role)}</span>
+      </span>
+      <Button href={home} variant="secondary">
+        Dashboard
+      </Button>
+      <Button href="/account" variant="ghost">
+        Account
+      </Button>
+      <form action={logoutAction}>
+        <Button type="submit" variant={stacked ? "secondary" : "ghost"}>
+          Log out
+        </Button>
+      </form>
+    </>
   );
 }

@@ -1,57 +1,69 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Container } from "@/components/ui/Container";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { LoginForm } from "@/components/auth/AuthForms";
+import { safeNextPath } from "@/lib/auth/authorization";
+import { getOptionalUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Log in",
-  description: "Login is a placeholder in Phase 1. Authentication is not implemented.",
+  description: "Sign in to an Osiria worker, advertiser, or admin account.",
 };
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
   return (
-    <Container className="flex justify-center py-16 sm:py-24">
-      <Card className="w-full max-w-md">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
-          Placeholder
-        </p>
-        <h1 className="mt-3 font-display text-3xl tracking-tight">Log in</h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          Account access is not available yet. This page exists so navigation and
-          future auth screens have a real route. Nothing you type here is
-          submitted or stored.
-        </p>
-        <form className="mt-8 space-y-4">
-          <label className="block text-sm">
-            Email
-            <input
-              disabled
-              type="email"
-              placeholder="you@example.com"
-              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted"
-            />
-          </label>
-          <label className="block text-sm">
-            Password
-            <input
-              disabled
-              type="password"
-              placeholder="••••••••"
-              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-muted"
-            />
-          </label>
-          <Button disabled className="w-full">
-            Sign in unavailable
-          </Button>
-        </form>
-        <p className="mt-6 text-sm text-muted">
-          Need an account later?{" "}
-          <Link href="/register" className="text-accent hover:underline">
-            Register placeholder
-          </Link>
-        </p>
-      </Card>
-    </Container>
+    <Suspense
+      fallback={
+        <AuthShell eyebrow="Account" title="Log in" description="Checking your session…">
+          {null}
+        </AuthShell>
+      }
+    >
+      <LoginContent searchParams={searchParams} />
+    </Suspense>
   );
+}
+
+async function LoginContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  const next = firstQuery(query.next) ?? "";
+  const user = await getOptionalUser();
+  if (user) {
+    redirect(safeNextPath(next || null, user.role));
+  }
+
+  return (
+    <AuthShell
+      eyebrow="Account"
+      title="Log in"
+      description="Use the email and password for your worker, advertiser, or admin account."
+      footer={
+        <>
+          <Link href="/forgot-password" className="text-accent hover:underline">
+            Forgot password
+          </Link>
+          <span> · </span>
+          <Link href="/register" className="text-accent hover:underline">
+            Create account
+          </Link>
+        </>
+      }
+    >
+      <LoginForm next={next} />
+    </AuthShell>
+  );
+}
+
+function firstQuery(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }

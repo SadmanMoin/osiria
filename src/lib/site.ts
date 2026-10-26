@@ -2,7 +2,7 @@ export const site = {
   name: "Osiria",
   tagline: "Social-to-Earn for real campaigns",
   description:
-    "Osiria is a Social-to-Earn platform where brands fund campaigns and people earn by completing social tasks. Phase 1 is a public preview of the product surface, not a live marketplace.",
+    "Osiria is a Social-to-Earn platform where advertisers fund campaigns and workers complete social tasks. Accounts and roles are live. Payments and social verification are not.",
 };
 
 export const navLinks = [

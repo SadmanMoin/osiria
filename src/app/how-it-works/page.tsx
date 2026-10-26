@@ -6,7 +6,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 export const metadata: Metadata = {
   title: "How It Works",
   description:
-    "How Osiria is intended to work for brands and participants. Phase 1 documents the model without live verification or payments.",
+    "How Osiria works for advertisers and workers. Verification and payments are not live.",
 };
 
 const phases = [
@@ -46,9 +46,9 @@ export default function HowItWorksPage() {
         ))}
       </div>
       <Card className="mt-8 bg-surface-elevated">
-        <h2 className="font-display text-2xl">What Phase 1 does not do</h2>
+        <h2 className="font-display text-2xl">What is still out of scope</h2>
         <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-muted">
-          <li>It does not sign anyone in or store accounts.</li>
+          <li>It signs accounts in with a server-side session. Campaign verification is still not live.</li>
           <li>It does not check social profiles or post URLs.</li>
           <li>It does not move money or show fabricated balances.</li>
         </ul>

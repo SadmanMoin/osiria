@@ -1,6 +1,7 @@
-// Osiria Phase 2 data model.
+// Osiria data model.
 // Monetary amounts are integer minor units (for example cents), never floats.
 // DATABASE_URL is supplied via prisma.config.ts / process environment, not this file.
+// Passwords are stored only as hashes. There is no default admin credential.
 
 generator client {
   provider = "prisma-client"
@@ -12,8 +13,8 @@ datasource db {
 }
 
 enum UserRole {
-  PARTICIPANT
-  BRAND
+  WORKER
+  ADVERTISER
   ADMIN
 }
 
@@ -39,6 +40,34 @@ enum SocialAccountStatus {
   REVOKED
 }
 
+enum EligibilityJoin {
+  OR
+  AND
+}
+
+enum AudienceMetric {
+  FOLLOWERS
+  FRIENDS
+}
+
+enum EligibilityStatus {
+  PENDING_VERIFICATION
+  ELIGIBLE
+  INELIGIBLE
+  MANUAL_REVIEW
+}
+
+enum EvidenceAvailability {
+  NONE
+  UNAVAILABLE
+  REPORTED
+}
+
+enum EligibilityDecisionSource {
+  RULES
+  ADMIN
+}
+
 enum CampaignStatus {
   DRAFT
   OPEN
@@ -57,6 +86,7 @@ enum SubmissionStatus {
   PENDING
   APPROVED
   REJECTED
+  APPEALED
   FLAGGED
 }
 
@@ -108,11 +138,13 @@ model User {
   emailVerifiedAt DateTime?
   passwordHash    String?
   displayName     String
-  role            UserRole   @default(PARTICIPANT)
+  role            UserRole   @default(WORKER)
   status          UserStatus @default(ACTIVE)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
   socialAccounts      SocialAccount[]
   ownedCampaigns      Campaign[]          @relation("CampaignOwner")
   submissions         TaskSubmission[]    @relation("SubmissionAuthor")
@@ -122,9 +154,35 @@ model User {
   notifications       Notification[]
   fraudEvents         FraudEvent[]
   adminAuditLogs      AdminAuditLog[]     @relation("AuditActor")
+  eligibilities       SocialEligibility[]
+  eligibilityReviews  SocialEligibility[] @relation("EligibilityReviewer")
 
   @@index([role, status])
   @@index([createdAt])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model SocialAccount {
@@ -140,6 +198,7 @@ model SocialAccount {
   updatedAt         DateTime            @updatedAt
 
   submissions TaskSubmission[]
+  eligibility SocialEligibility?
 
   @@unique([userId, platform])
   @@unique([platform, handle])
@@ -148,14 +207,42 @@ model SocialAccount {
 }
 
 model SocialPlatformSetting {
-  id                   String         @id @default(uuid())
-  platform             SocialPlatform @unique
-  displayName          String
-  isEnabled            Boolean        @default(true)
-  verificationRequired Boolean        @default(true)
-  minFollowers         Int?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  id                       String           @id @default(uuid())
+  platform                 SocialPlatform   @unique
+  displayName              String
+  isEnabled                Boolean          @default(true)
+  verificationRequired     Boolean          @default(true)
+  /// Audience threshold. Followers or friends, depending on audienceMetric.
+  minFollowers             Int?
+  accountCreatedOnOrBefore DateTime?        @db.Date
+  ruleJoin                 EligibilityJoin  @default(OR)
+  audienceMetric           AudienceMetric   @default(FOLLOWERS)
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+}
+
+model SocialEligibility {
+  id                   String                    @id @default(uuid())
+  userId               String
+  user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform             SocialPlatform
+  status               EligibilityStatus
+  reasons              Json
+  accountCreatedOn     DateTime?                 @db.Date
+  audienceCount        Int?
+  evidenceAvailability EvidenceAvailability
+  reviewNote           String?
+  reviewedById         String?
+  reviewedBy           User?                     @relation("EligibilityReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt           DateTime?
+  decisionSource       EligibilityDecisionSource @default(RULES)
+  socialAccountId      String?                   @unique
+  socialAccount        SocialAccount?            @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  @@unique([userId, platform])
+  @@index([status, platform])
 }
 
 model Campaign {
@@ -212,10 +299,16 @@ model TaskSubmission {
   user            User             @relation("SubmissionAuthor", fields: [userId], references: [id], onDelete: Cascade)
   socialAccountId String
   socialAccount   SocialAccount    @relation(fields: [socialAccountId], references: [id], onDelete: Restrict)
-  status          SubmissionStatus @default(PENDING)
-  proofUrl        String?
-  reviewerNote    String?
-  reviewedById    String?
+  status           SubmissionStatus @default(PENDING)
+  proofUrl         String?
+  normalizedProofUrl String?
+  @@index([normalizedProofUrl])
+  reviewerNote     String?
+  rejectionReason  String?
+  appealReason     String?
+  appealedAt       DateTime?
+  appealReviewNote String?
+  reviewedById     String?
   reviewedBy      User?            @relation("SubmissionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   submittedAt     DateTime         @default(now())
   reviewedAt      DateTime?
@@ -308,6 +401,9 @@ model FraudEvent {
   severity     FraudSeverity
   details      Json?
   createdAt    DateTime      @default(now())
+  resolvedAt DateTime?
+  resolution String?
+  resolvedById String?
 
   @@index([userId, createdAt])
   @@index([severity, createdAt])

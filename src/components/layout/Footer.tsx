@@ -10,8 +10,8 @@ export function Footer() {
         <div>
           <Logo className="text-accent" />
           <p className="mt-3 max-w-sm text-sm leading-6 text-muted">
-            Social-to-Earn infrastructure for brands and participants. Phase 1
-            is a public product preview.
+            Social-to-Earn infrastructure for advertisers and workers. Campaign
+            payouts are not live.
           </p>
         </div>
         <nav className="flex flex-col gap-3 text-sm" aria-label="Footer">
@@ -33,7 +33,7 @@ export function Footer() {
         </nav>
       </Container>
       <Container className="border-t border-border py-6 text-xs text-muted">
-        © 2026 Osiria. Preview UI only.
+        © 2026 Osiria.
       </Container>
     </footer>
   );
